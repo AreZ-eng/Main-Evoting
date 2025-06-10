@@ -44,6 +44,12 @@ module.exports = function(app) {
         body("epassword").isLength({min: 1})
     ], controller.getBallots)
 
+    app.post("/api/election/getballotstps", [
+        authJwt.verifyToken,
+        body("epassword").isLength({min: 1}),
+        body("tps").isLength({min: 1}),
+    ], controller.getBallotsTps)
+
     app.post("/api/election/getsumballotsontps",[
         authJwt.verifyToken,
         body("epassword").isLength({min: 1}),

@@ -222,6 +222,57 @@ exports.getBallots = async (req, res) => {
     }
 };
 
+exports.getBallotsTps = async (req, res) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+        return res.status(400).json({ errors: errors.array() });
+    }
+
+    const password = req.body.epassword;
+    const tps = req.body.tps;
+
+    try {
+        const isPasswordValid = await bcrypt.compare(password, dpassword);
+        if (!isPasswordValid) {
+            return res.status(403).json({ message: "Invalid password." });
+        }
+
+        const token = req.token;
+
+        const agent = new https.Agent({ rejectUnauthorized: false });
+
+        const dTps = await Tps.findOne({ where: { id: tps } });
+        if (!dTps) {
+            return res.status(404).json({ message: "TPS not found." });
+        }
+
+        const response = await axios.post(
+            `${dTps.alamat}/api/election/getballots`,
+            { password },
+            {
+                httpsAgent: agent,
+                headers: { Authorization: `Bearer ${token}` },
+                responseType: "json",
+            }
+        );
+        
+        const fileName = `ballots_tps${dTps.id}_${Date.now()}.json`;
+        const filePath = path.join(__dirname, `../downloads/${fileName}`);
+
+        const dir = path.dirname(filePath);
+        if (!fs.existsSync(dir)) {
+            fs.mkdirSync(dir, { recursive: true });
+        }
+
+        fs.writeFileSync(filePath, JSON.stringify(response.data, null, 2), "utf-8");
+
+        return res.status(200).json({ message: "Ballots successfully fetched", data: response.data });        
+    } catch (error) {
+        console.error("Error get ballots:", error);
+        return res.status(500).json({ message: "Error taking the ballots", error });
+    }
+};
+
 // exports.getSumBallotsOnTps = async (req, res) => {
 //     const errors = validationResult(req);
 //     if (!errors.isEmpty()) {
@@ -317,7 +368,7 @@ exports.getSumBallotsOnTps = async (req, res) => {
     }
 
     const password = req.body.epassword;
-    const tpsId = parseInt(req.body.tps, 10);
+    const tpsId = req.body.tps;
 
     if (isNaN(tpsId)) {
         return res.status(400).json({ message: "Invalid TPS ID format." });
@@ -388,21 +439,18 @@ exports.getSumBallots = async (req, res) => {
         if (!isPasswordValid) {
             return res.status(403).json({ message: "Invalid password." });
         }
-        // 1. Ambil semua data TPS dari database
-        const allTpsFromDb = await Tps.findAll({ attributes: ['id'] }); // Hanya ambil ID untuk efisiensi
+        const allTpsFromDb = await Tps.findAll({ attributes: ['id'] });
         if (!allTpsFromDb || allTpsFromDb.length === 0) {
             return res.status(404).json({ message: "Tidak ada data TPS yang ditemukan di database." });
         }
 
-        // 2. Periksa apakah direktori 'downloads' ada
         if (!fs.existsSync(downloadsDir)) {
             return res.status(404).json({ message: "Folder 'downloads' tidak ditemukan." });
         }
-        const filesInDir = fs.readdirSync(downloadsDir); // Baca semua file sekali
+        const filesInDir = fs.readdirSync(downloadsDir);
 
-        // 3. Iterasi setiap TPS dari database
         for (const tps of allTpsFromDb) {
-            const tpsId = tps.id; // Asumsi model Tps memiliki atribut 'id'
+            const tpsId = tps.id;
 
             // 3a. Cari semua file ballot yang sesuai untuk TPS saat ini
             const tpsBallotFiles = filesInDir.filter(file => {
