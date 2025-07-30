@@ -61,5 +61,5 @@ module.exports = function(app) {
         body("epassword").isLength({min: 1}),
     ], controller.getSumBallots)
 
-    app.post("/api/election/insertvoter", [authJwt.verifyToken], controller.autoInsertVotes)
+    // app.post("/api/election/insertvoter", [authJwt.verifyToken], controller.autoInsertVotes)
 }     

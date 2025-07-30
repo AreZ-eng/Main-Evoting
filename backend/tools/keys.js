@@ -110,18 +110,4 @@ function addEncryptedBallots(encryptedVotes) {
     return totalEncryptedVotes.map(value => value.toString()); // Konversi kembali ke string
 }
 
-function addTwoEncryptedVotes(votesA, votesB) {
-  const n = process.env.PUB_N;
-  const g = process.env.PUB_G;
-
-  if (!n || !g) {
-    throw new Error('Kunci publik tidak ditemukan di file .env');
-  }
-
-  const publicKey = new PublicKey(BigInt(n), BigInt(g));
-
-  return votesA.map((val, i) => publicKey.addition(val, votesB[i]));
-}
-
-
-module.exports = { encVote, decVote, addEncryptedBallots, addTwoEncryptedVotes };
+module.exports = { encVote, decVote, addEncryptedBallots };

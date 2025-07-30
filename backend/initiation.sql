@@ -26,6 +26,23 @@ VALUES
 ('ed60c247-7e2b-4cfb-ae72-6ac58713566c', 'Grace Red', '606 Chestnut St, Springfield, IL', '$2b$08$oaFkPy2Oyq2aMpba2N44UesT7QuIVSiu0XGHnicPp.GrykiQyJi8W', 2, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
 ('a1537c60-5e50-415c-a46f-58789049b688', 'Henry Violet', '707 Fir St, Springfield, IL', '$2b$08$9umnFhbRI4ylqIy6AQ3qNewtqf0vrZGUWjpfvaABvkZbqV5kJNyXy', 2, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
 
+-- Membuat tabel votes
+CREATE TABLE IF NOT EXISTS "votes" (
+  "userId" UUID NOT NULL PRIMARY KEY,
+  "proses" VARCHAR(20) NOT NULL DEFAULT 'belum memilih' CHECK ("proses" IN ('belum memilih', 'sedang memilih', 'sudah memilih')),
+  "hash" VARCHAR UNIQUE,
+  "createdAt" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  "updatedAt" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY ("userId"),
+  CONSTRAINT fk_vote_user FOREIGN KEY ("userId") REFERENCES "users"("id") ON UPDATE CASCADE ON DELETE CASCADE
+);
+
+-- Menyisipkan data ke dalam tabel votes
+INSERT INTO "votes" ("userId", "proses", "hash", "createdAt", "updatedAt")
+SELECT id, 'belum memilih', NULL, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP
+FROM "users"
+ON CONFLICT ("userId") DO NOTHING;
+
 -- Membuat tabel candidates
 CREATE TABLE IF NOT EXISTS "candidates" (
   "candidateNumber" UUID PRIMARY KEY DEFAULT gen_random_uuid(),

@@ -1,5 +1,5 @@
 module.exports = (sequelize, Sequelize) => {
-    const Vote = sequelize.define("vote", {
+    const Vote = sequelize.define("votes", {
         userId: {
             type: Sequelize.UUID,
             allowNull: false,
@@ -7,6 +7,7 @@ module.exports = (sequelize, Sequelize) => {
                 model: 'users',
                 key: 'id'
             },
+            primaryKey: true,
             onUpdate: 'CASCADE',
             onDelete: 'CASCADE'
         },

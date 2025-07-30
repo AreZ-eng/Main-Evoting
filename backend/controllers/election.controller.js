@@ -246,6 +246,16 @@ exports.getBallotsTps = async (req, res) => {
             return res.status(404).json({ message: "TPS not found." });
         }
 
+        await axios.post(
+            `${dTps.alamat}/api/election/totalballots`,
+            { password },
+            {
+                httpsAgent: agent,
+                headers: { Authorization: `Bearer ${token}` },
+                responseType: "json",
+            }
+        );
+
         const response = await axios.post(
             `${dTps.alamat}/api/election/getballots`,
             { password },
@@ -744,29 +754,29 @@ exports.resetVote = async (req, res) => {
     }
 };
 
-exports.autoInsertVotes = async (req, res) => {
-    try {
-        const voteCount = await Vote.count();
-        if (voteCount === 0) {
-            console.log("Votes table is empty. Adding data...");
+// exports.autoInsertVotes = async (req, res) => {
+//     try {
+//         const voteCount = await Vote.count();
+//         if (voteCount === 0) {
+//             console.log("Votes table is empty. Adding data...");
 
-            const users = await User.findAll();
+//             const users = await User.findAll();
 
-            const voteData = users.map(user => ({
-                userId: user.id,
-                proses: VOTE_STATUS.BELUM_MEMILIH,
-                hash: null,
-            }));
+//             const voteData = users.map(user => ({
+//                 userId: user.id,
+//                 proses: VOTE_STATUS.BELUM_MEMILIH,
+//                 hash: null,
+//             }));
 
-            await Vote.bulkCreate(voteData);
-            console.log("Data successfully inserted into votes table.");
-            return res.status(201).json({ message: "Votes table successfully populated." });
-        } else {
-            console.log("Votes table is not empty. Skipping data insertion.");
-            return res.status(200).json({ message: "Votes table is already populated. No action taken." });
-        }
-    } catch (error) {
-        console.error("Error while inserting data into votes table:", error);
-        return res.status(500).json({ message: "Error inserting data into votes table.", error });
-    }
-};
+//             await Vote.bulkCreate(voteData);
+//             console.log("Data successfully inserted into votes table.");
+//             return res.status(201).json({ message: "Votes table successfully populated." });
+//         } else {
+//             console.log("Votes table is not empty. Skipping data insertion.");
+//             return res.status(200).json({ message: "Votes table is already populated. No action taken." });
+//         }
+//     } catch (error) {
+//         console.error("Error while inserting data into votes table:", error);
+//         return res.status(500).json({ message: "Error inserting data into votes table.", error });
+//     }
+// };

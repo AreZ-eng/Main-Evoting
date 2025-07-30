@@ -14,7 +14,7 @@ app.use(express.json());
 
 // Tambahkan middleware CORS sebelum route apa pun
 app.use(cors({
-  origin: 'http://localhost:4173', // sesuaikan dengan alamat frontend Anda
+  origin: ['http://localhost:4173', 'https://localhost:4173'], // sesuaikan dengan alamat frontend Anda
   credentials: true
 }));
 
@@ -43,11 +43,10 @@ require('./routes/election.route')(app);
 // Port
 const PORT = process.env.PORT || 5000;
 
-// Konfigurasi SSL jika SSL=ON
 if (process.env.SSL === "ON") {
   const sslOptions = {
-    key: fs.readFileSync("./certs/server.key"),
-    cert: fs.readFileSync("./certs/server.crt")
+    key: fs.readFileSync("/etc/ssl/private/server.key"),
+    cert: fs.readFileSync("/etc/ssl/private/server.crt")
   };
 
   https.createServer(sslOptions, app).listen(PORT, () => {
