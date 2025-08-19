@@ -14,6 +14,11 @@ module.exports = (sequelize, Sequelize) => {
             type: Sequelize.STRING,
             allowNull: false
         },
+        role: {
+            type: Sequelize.STRING,
+            allowNull: false,
+            defaultValue: 'admin'
+        },
         createdAt: {
             type: Sequelize.DATE,
             defaultValue: Sequelize.NOW,

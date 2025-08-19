@@ -1,5 +1,8 @@
 # Gunakan image Node.js resmi
-FROM node:20.14.0
+FROM node:20.17.0
+
+# Buat user non-root untuk keamanan
+RUN groupadd -r appuser && useradd -r -g appuser appuser
 
 # Direktori kerja dalam kontainer
 WORKDIR /app_main_api
@@ -17,12 +20,16 @@ RUN apt-get update && apt-get install -y postgresql-client nano && \
 # Salin aplikasi ke dalam kontainer
 COPY . .
 
-# Salin sertifikat SSL ke direktori yang tepat
-COPY certs/server.key /etc/ssl/private/server.key
-COPY certs/server.crt /etc/ssl/private/server.crt
+RUN chown -R appuser:appuser /app_main_api
+
+# Buat direktori untuk sertifikat SSL
+RUN mkdir -p /etc/ssl/private && chown -R appuser:appuser /etc/ssl/private
 
 # Ekspos port untuk aplikasi
 EXPOSE 5000
+
+# Switch ke user non-root
+USER appuser
 
 # Jalankan aplikasi
 CMD ["node", "server.js"]

@@ -21,8 +21,11 @@ const VOTE_STATUS = {
 
 // Membuat voter baru
 exports.createVoter = async (req, res) => {
+    console.log(`[ELECTION] createVoter - Function started`);
+    
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
+        console.log(`[ELECTION] createVoter - Function ended with validation errors`);
         return res.status(400).json({ errors: errors.array() });
     }
 
@@ -35,6 +38,7 @@ exports.createVoter = async (req, res) => {
         await Vote.create({ userId: newUser.id, proses: VOTE_STATUS.BELUM_MEMILIH }, { transaction });
 
         await transaction.commit();
+        console.log(`[ELECTION] createVoter - ${newUser.id} successfully created`);
         return res.status(201).json({
             message: `User ${newUser.id} successfully created`,
             user: newUser
@@ -42,42 +46,53 @@ exports.createVoter = async (req, res) => {
     } catch (error) {
         await transaction.rollback();
         console.error(error);
+        console.log(`[ELECTION] createVoter - Function ended with error`);
         return res.status(500).json({ message: "Error creating voter", error });
     }
 };
 
 // Memulai proses voting
 exports.startVoting = async (req, res, next) => {
+    console.log(`[ELECTION] startVoting - Function started`);
+    
     const userId = req.id;
 
     try {
         const vote = await Vote.findOne({ where: { userId } });
 
         if (!vote) {
+            console.log(`[ELECTION] startVoting - record for ${userId} not found`);
             return res.status(404).json({ message: `Vote record not found for this user (${userId})` });
         }
         if (vote.proses === VOTE_STATUS.SUDAH_MEMILIH) {
+            console.log(`[ELECTION] startVoting - user ${userId} already voted`);
             return res.status(400).json({ message: "User has already voted" });
         }
 
         if (vote.proses === VOTE_STATUS.SEDANG_MEMILIH) {
+            console.log(`[ELECTION] startVoting - ${userId} voting process continued`);
             return res.status(200).json({ message: `Voting process continued for user ${userId}` });
         } else {
             vote.proses = VOTE_STATUS.SEDANG_MEMILIH;
             await vote.save();
         }
 
+        console.log(`[ELECTION] startVoting - ${userId} voting process started`);
         return res.status(200).json({ message: `Voting process started for user ${userId}` });
     } catch (error) {
         console.error(error);
+        console.log(`[ELECTION] startVoting - ${userId} voting process failed`);
         return res.status(500).json({ message: "Error starting voting process", error });
     }
 };
 
 // Menyelesaikan proses voting
 exports.finishVoting = async (req, res) => {
+    console.log(`[ELECTION] finishVoting - Function started`);
+    
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
+        console.log(`[ELECTION] finishVoting - Function ended with validation errors`);
         return res.status(400).json({ errors: errors.array() });
     }
 
@@ -90,14 +105,17 @@ exports.finishVoting = async (req, res) => {
 
         if (!vote) {
             await transaction.rollback();
+            console.log(`[ELECTION] finishVoting - ${userId} vote not found`);
             return res.status(404).json({ message: "Vote record not found for this user" });
         }
 
         if (vote.proses === VOTE_STATUS.SUDAH_MEMILIH) {
             await transaction.rollback();
+            console.log(`[ELECTION] finishVoting - ${userId} already voted`);
             return res.status(400).json({ message: "User has already voted" });
         } else if (vote.proses === VOTE_STATUS.BELUM_MEMILIH) {
             await transaction.rollback();
+            console.log(`[ELECTION] finishVoting - ${userId} not started voting`);
             return res.status(400).json({ message: "User has not started voting" });
         }
 
@@ -106,10 +124,12 @@ exports.finishVoting = async (req, res) => {
         await vote.save({ transaction });
 
         await transaction.commit();
+        console.log(`[ELECTION] finishVoting - ${userId} voting process completed`);
         return res.status(200).json({ message: `Voting process completed for user ${userId}` });
     } catch (error) {
         await transaction.rollback();
         console.error(error);
+        console.log(`[ELECTION] finishVoting - ${userId} voting process failed`);
         return res.status(500).json({ message: "Error finishing voting process", error });
     }
 };
@@ -159,8 +179,11 @@ exports.finishVoting = async (req, res) => {
 // };
 
 exports.getBallots = async (req, res) => {
+    console.log(`[ELECTION] getBallots - Function started`);
+    
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
+        console.log(`[ELECTION] getBallots - Function ended with validation errors`);
         return res.status(400).json({ errors: errors.array() });
     }
 
@@ -170,6 +193,7 @@ exports.getBallots = async (req, res) => {
     try {
         const isPasswordValid = await bcrypt.compare(password, thePassword);
         if (!isPasswordValid) {
+            console.log(`[ELECTION] getBallots - Function ended with invalid password`);
             return res.status(403).json({ message: "Invalid password." });
         }
 
@@ -178,6 +202,7 @@ exports.getBallots = async (req, res) => {
 
         const allTps = await Tps.findAll();
         if (!allTps || allTps.length === 0) {
+            console.log(`[ELECTION] getBallots - Function ended with no TPS found`);
             return res.status(404).json({ message: "No TPS found." });
         }
 
@@ -212,19 +237,24 @@ exports.getBallots = async (req, res) => {
             }
         }
 
+        console.log(`[ELECTION] getBallots - Function ended successfully`);
         return res.status(200).json({
             message: "Proses pengambilan ballot selesai.",
             results: savedFiles,
         });
     } catch (error) {
         console.error("Error get ballots:", error);
+        console.log(`[ELECTION] getBallots - Function ended with error`);
         return res.status(500).json({ message: "Error taking the ballots", error });
     }
 };
 
 exports.getBallotsTps = async (req, res) => {
+    console.log(`[ELECTION] getBallotsTps - Function started`);
+    
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
+        console.log(`[ELECTION] getBallotsTps - Function ended with validation errors`);
         return res.status(400).json({ errors: errors.array() });
     }
 
@@ -234,6 +264,7 @@ exports.getBallotsTps = async (req, res) => {
     try {
         const isPasswordValid = await bcrypt.compare(password, dpassword);
         if (!isPasswordValid) {
+            console.log(`[ELECTION] getBallotsTps - Function ended with invalid password`);
             return res.status(403).json({ message: "Invalid password." });
         }
 
@@ -243,6 +274,7 @@ exports.getBallotsTps = async (req, res) => {
 
         const dTps = await Tps.findOne({ where: { id: tps } });
         if (!dTps) {
+            console.log(`[ELECTION] getBallotsTps - Function ended with TPS ${tps} not found`);
             return res.status(404).json({ message: "TPS not found." });
         }
 
@@ -276,9 +308,11 @@ exports.getBallotsTps = async (req, res) => {
 
         fs.writeFileSync(filePath, JSON.stringify(response.data, null, 2), "utf-8");
 
+        console.log(`[ELECTION] getBallotsTps - ${tps} ballots successfully fetched`);
         return res.status(200).json({ message: "Ballots successfully fetched", data: response.data });        
     } catch (error) {
         console.error("Error get ballots:", error);
+        console.log(`[ELECTION] getBallotsTps - ${tps} ballots failed to fetch`);
         return res.status(500).json({ message: "Error taking the ballots", error });
     }
 };
@@ -345,6 +379,7 @@ exports.checkTpsBallotStatus = async (req, res) => {
 
         const allTps = await Tps.findAll();
         if (!allTps || allTps.length === 0) {
+            console.log(`[ELECTION] checkTpsBallotStatus - Function ended with no TPS found`);
             return res.status(404).json({ message: "No TPS found in database." });
         }
 
@@ -364,9 +399,11 @@ exports.checkTpsBallotStatus = async (req, res) => {
             };
         });
 
+        console.log(`[ELECTION] checkTpsBallotStatus - Function ended successfully`);
         return res.status(200).json({ results });
     } catch (error) {
         console.error("Error checking TPS ballot status:", error);
+        console.log(`[ELECTION] checkTpsBallotStatus - Function ended with error`);
         return res.status(500).json({ message: "Internal error", error });
     }
 };
@@ -374,6 +411,7 @@ exports.checkTpsBallotStatus = async (req, res) => {
 exports.getSumBallotsOnTps = async (req, res) => {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
+        console.log(`[ELECTION] getSumBallotsOnTps - Function ended with validation errors`);
         return res.status(400).json({ errors: errors.array() });
     }
 
@@ -381,12 +419,14 @@ exports.getSumBallotsOnTps = async (req, res) => {
     const tpsId = req.body.tps;
 
     if (isNaN(tpsId)) {
+        console.log(`[ELECTION] getSumBallotsOnTps - Function ended with invalid TPS ID (${tpsId}) format`);
         return res.status(400).json({ message: "Invalid TPS ID format." });
     }
 
     try {
         const isPasswordValid = await bcrypt.compare(password, dpassword);
         if (!isPasswordValid) {
+            console.log(`[ELECTION] getSumBallotsOnTps - Function ended with invalid password`);
             return res.status(403).json({ message: "Invalid password." });
         }
 
@@ -402,6 +442,7 @@ exports.getSumBallotsOnTps = async (req, res) => {
         );
 
         if (tpsFiles.length === 0) {
+            console.log(`[ELECTION] getSumBallotsOnTps - TPS ${tpsId} no ballots file found`);
             return res.status(404).json({ message: `No ballots file found for TPS ID ${tpsId}.` });
         }
 
@@ -426,9 +467,11 @@ exports.getSumBallotsOnTps = async (req, res) => {
             totalVotes: decryptedVotes[index]
         }));
         
+        console.log(`[ELECTION] getSumBallotsOnTps - TPS ${tpsId} ballots successfully processed`);
         return res.status(200).json({ tps: tpsId, result });    
     } catch (error) {
         console.error("Error processing the total ballots for TPS:", error);
+        console.log(`[ELECTION] getSumBallotsOnTps - TPS ${tpsId} ballots failed to process`);
         return res.status(500).json({ message: "Error processing the total ballots for TPS", error });
     }
 };
@@ -436,6 +479,7 @@ exports.getSumBallotsOnTps = async (req, res) => {
 exports.getSumBallots = async (req, res) => {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
+        console.log(`[ELECTION] getSumBallots - Function ended with validation errors`);
         return res.status(400).json({ errors: errors.array() });
     }
 
@@ -447,14 +491,17 @@ exports.getSumBallots = async (req, res) => {
     try {
         const isPasswordValid = await bcrypt.compare(password, dpassword);
         if (!isPasswordValid) {
+            console.log(`[ELECTION] getSumBallots - Function ended with invalid password`);
             return res.status(403).json({ message: "Invalid password." });
         }
         const allTpsFromDb = await Tps.findAll({ attributes: ['id'] });
         if (!allTpsFromDb || allTpsFromDb.length === 0) {
+            console.log(`[ELECTION] getSumBallots - Function ended with no TPS found in database`);
             return res.status(404).json({ message: "Tidak ada data TPS yang ditemukan di database." });
         }
 
         if (!fs.existsSync(downloadsDir)) {
+            console.log(`[ELECTION] getSumBallots - Function ended with downloads folder not found`);
             return res.status(404).json({ message: "Folder 'downloads' tidak ditemukan." });
         }
         const filesInDir = fs.readdirSync(downloadsDir);
@@ -539,9 +586,11 @@ exports.getSumBallots = async (req, res) => {
 
         // 4. Periksa apakah ada data valid yang berhasil dikumpulkan untuk agregasi
         if (tpsDataForAggregation.length === 0) {
+            console.log(`[ELECTION] getSumBallots - Function ended with no valid ballot data`);
             return res.status(404).json({ message: "Tidak ada data ballot yang valid yang dapat diproses dari TPS manapun." });
         }
         if (!candidateNamesList) {
+            console.log(`[ELECTION] getSumBallots - Function ended with failed to determine candidate list`);
              return res.status(500).json({ message: "Gagal menentukan daftar kandidat dari file ballot manapun." });
         }
 
@@ -564,6 +613,7 @@ exports.getSumBallots = async (req, res) => {
             decryptedTotalVotes: decryptedVoteCounts[index]    // Hasil dekripsi
         }));
         
+        console.log(`[ELECTION] getSumBallots - Function ended successfully`);
         return res.status(200).json({
             message: "Total suara berhasil diagregasi dan didekripsi dari TPS yang valid.",
             processedTpsCount: tpsDataForAggregation.length,
@@ -571,6 +621,7 @@ exports.getSumBallots = async (req, res) => {
         });
     } catch (error) {
         console.error("Error dalam fungsi getSumBallots:", error);
+        console.log(`[ELECTION] getSumBallots - Function ended with error`);
         if (error.message.includes('Kunci publik tidak ditemukan') || 
             error.message.includes('Gagal memparsing voteTo') || 
             error.message.includes('Jumlah kandidat tidak konsisten')) {
@@ -584,9 +635,11 @@ exports.getAllVoters = async (req, res) => {
     try {
         const voters = await Vote.findAll();
 
+        console.log(`[ELECTION] getAllVoters - Function ended successfully`);
         return res.status(200).json(voters);
     } catch (error) {
         console.error("Error fetching all voters:", error);
+        console.log(`[ELECTION] getAllVoters - Function ended with error`);
         return res.status(500).json({ message: "Error fetching all voters", error });
     }
 };
@@ -660,6 +713,7 @@ exports.resetVote = async (req, res) => {
     const token = req.token;
 
     if (!Array.isArray(ids) || ids.length === 0) {
+        console.log(`[ELECTION] resetVote - invalid IDs ${ids} array`);
         return res.status(400).json({ message: "Array of voter IDs is required." });
     }
 
@@ -675,6 +729,7 @@ exports.resetVote = async (req, res) => {
 
         if (users.length === 0) {
             await transaction.rollback();
+            console.log(`[ELECTION] resetVote - Function ended with no users found`);
             return res.status(404).json({ message: "No users found with the given IDs." });
         }
 
@@ -725,6 +780,7 @@ exports.resetVote = async (req, res) => {
 
         if (remoteFailed) {
             await transaction.rollback();
+            console.log(`[ELECTION] resetVote - Function ended with remote failure`);
             return res.status(500).json({
                 message: "Rollback due to failure in sub TPS API.",
                 remoteResults: resetResults
@@ -741,6 +797,7 @@ exports.resetVote = async (req, res) => {
 
         await transaction.commit();
 
+        console.log(`[ELECTION] resetVote - ${ids} vote reset process completed`);
         return res.status(200).json({
             message: "Vote reset process completed.",
             updatedLocal: updated[0],
@@ -750,6 +807,7 @@ exports.resetVote = async (req, res) => {
     } catch (error) {
         await transaction.rollback();
         console.error("Error resetting votes:", error);
+        console.log(`[ELECTION] resetVote - ${ids} vote reset process failed`);
         return res.status(500).json({ message: "Error resetting votes", error });
     }
 };

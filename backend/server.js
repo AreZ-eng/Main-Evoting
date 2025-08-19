@@ -14,7 +14,7 @@ app.use(express.json());
 
 // Tambahkan middleware CORS sebelum route apa pun
 app.use(cors({
-  origin: ['http://localhost:4173', 'https://localhost:4173'], // sesuaikan dengan alamat frontend Anda
+  origin: [ 'http://localhost:4173' ],
   credentials: true
 }));
 
@@ -22,7 +22,7 @@ app.use(cors({
 db.sequelize.authenticate({ force: false })
   .then(() => {
     console.log("Database connected successfully.");
-    return db.sequelize.sync();
+    return db.sequelize.sync({force: false});
   })
   .then(() => {
     console.log("All models are synchronized with the database.");
